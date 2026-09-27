@@ -1,0 +1,668 @@
+--========================================================--
+--        ULTRA 3D GRAPHICS V8
+--        CINEMATIC DAY + FPS OPTIMIZED
+--        NO FOG / NO ATMOSPHERE
+--        LOADING 1% > 100%
+--========================================================--
+
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+local Player = Players.LocalPlayer
+
+--========================================================--
+-- CONFIG
+--========================================================--
+
+local S = {
+
+	-- LIGHTING
+	Brightness = 1.75,
+	Exposure = 0.04,
+
+	-- ENVIRONMENT
+	DiffuseScale = 0.82,
+	SpecularScale = 0.88,
+
+	-- COLOR
+	Contrast = 0.24,
+	Saturation = 0.16,
+	ColorBrightness = 0.01,
+
+	-- BLOOM
+	BloomIntensity = 0.10,
+	BloomSize = 24,
+	BloomThreshold = 0.90,
+
+	-- SUN RAYS
+	SunIntensity = 0.07,
+	SunSpread = 0.65,
+
+	-- WATER
+	WaterTransparency = 0.02,
+	WaterReflectance = 0.82,
+	WaterWaveSize = 0.20,
+	WaterWaveSpeed = 8,
+
+	-- CAMERA
+	FieldOfView = 70,
+}
+
+--========================================================--
+-- LOADING UI
+--========================================================--
+
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local OldLoading =
+	PlayerGui:FindFirstChild("Ultra3D_V8_Loading")
+
+if OldLoading then
+	OldLoading:Destroy()
+end
+
+local LoadingGui =
+	Instance.new("ScreenGui")
+
+LoadingGui.Name =
+	"Ultra3D_V8_Loading"
+
+LoadingGui.IgnoreGuiInset = true
+LoadingGui.ResetOnSpawn = false
+
+pcall(function()
+	LoadingGui.DisplayOrder = 999999
+end)
+
+LoadingGui.Parent = PlayerGui
+
+--========================================================--
+-- MAIN BOX
+--========================================================--
+
+local Main =
+	Instance.new("Frame")
+
+Main.Name = "LoadingBox"
+
+Main.Size =
+	UDim2.new(0, 260, 0, 95)
+
+Main.Position =
+	UDim2.new(0.5, -130, 0.5, -47)
+
+Main.BackgroundColor3 =
+	Color3.fromRGB(18, 18, 22)
+
+Main.BackgroundTransparency = 0.08
+
+Main.BorderSizePixel = 0
+
+Main.Parent = LoadingGui
+
+local Corner =
+	Instance.new("UICorner")
+
+Corner.CornerRadius =
+	UDim.new(0, 12)
+
+Corner.Parent = Main
+
+local Stroke =
+	Instance.new("UIStroke")
+
+Stroke.Color =
+	Color3.fromRGB(100, 100, 110)
+
+Stroke.Transparency = 0.55
+
+Stroke.Thickness = 1
+
+Stroke.Parent = Main
+
+--========================================================--
+-- TITLE
+--========================================================--
+
+local Title =
+	Instance.new("TextLabel")
+
+Title.Size =
+	UDim2.new(1, -20, 0, 25)
+
+Title.Position =
+	UDim2.new(0, 10, 0, 8)
+
+Title.BackgroundTransparency = 1
+
+Title.Text =
+	"ULTRA 3D GRAPHICS V8"
+
+Title.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+Title.TextSize = 15
+
+Title.Font =
+	Enum.Font.GothamBold
+
+Title.Parent = Main
+
+--========================================================--
+-- STATUS
+--========================================================--
+
+local Status =
+	Instance.new("TextLabel")
+
+Status.Size =
+	UDim2.new(1, -20, 0, 20)
+
+Status.Position =
+	UDim2.new(0, 10, 0, 32)
+
+Status.BackgroundTransparency = 1
+
+Status.Text =
+	"Initializing..."
+
+Status.TextColor3 =
+	Color3.fromRGB(190, 190, 195)
+
+Status.TextSize = 12
+
+Status.Font =
+	Enum.Font.Gotham
+
+Status.Parent = Main
+
+--========================================================--
+-- PROGRESS BACKGROUND
+--========================================================--
+
+local BarBack =
+	Instance.new("Frame")
+
+BarBack.Size =
+	UDim2.new(1, -30, 0, 7)
+
+BarBack.Position =
+	UDim2.new(0, 15, 1, -18)
+
+BarBack.BackgroundColor3 =
+	Color3.fromRGB(45, 45, 50)
+
+BarBack.BorderSizePixel = 0
+
+BarBack.Parent = Main
+
+local BarCorner =
+	Instance.new("UICorner")
+
+BarCorner.CornerRadius =
+	UDim.new(1, 0)
+
+BarCorner.Parent = BarBack
+
+--========================================================--
+-- PROGRESS
+--========================================================--
+
+local Bar =
+	Instance.new("Frame")
+
+Bar.Size =
+	UDim2.new(0, 0, 1, 0)
+
+Bar.BackgroundColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+Bar.BorderSizePixel = 0
+
+Bar.Parent = BarBack
+
+local BarCorner2 =
+	Instance.new("UICorner")
+
+BarCorner2.CornerRadius =
+	UDim.new(1, 0)
+
+BarCorner2.Parent = Bar
+
+--========================================================--
+-- PERCENT
+--========================================================--
+
+local Percent =
+	Instance.new("TextLabel")
+
+Percent.Size =
+	UDim2.new(0, 45, 0, 20)
+
+Percent.Position =
+	UDim2.new(1, -50, 0, 8)
+
+Percent.BackgroundTransparency = 1
+
+Percent.Text =
+	"1%"
+
+Percent.TextColor3 =
+	Color3.fromRGB(255, 255, 255)
+
+Percent.TextSize = 12
+
+Percent.Font =
+	Enum.Font.GothamBold
+
+Percent.Parent = Main
+
+--========================================================--
+-- LOADING FUNCTION
+--========================================================--
+
+local function SetProgress(Value, Text)
+
+	Value = math.clamp(Value, 0, 100)
+
+	Percent.Text =
+		tostring(Value) .. "%"
+
+	if Text then
+		Status.Text = Text
+	end
+
+	Bar.Size =
+		UDim2.new(
+			Value / 100,
+			0,
+			1,
+			0
+		)
+
+end
+
+--========================================================--
+-- 1%
+--========================================================--
+
+SetProgress(
+	1,
+	"Starting graphics..."
+)
+
+task.wait(0.05)
+
+--========================================================--
+-- LIGHTING
+--========================================================--
+
+SetProgress(
+	15,
+	"Optimizing lighting..."
+)
+
+pcall(function()
+
+	Lighting.Technology =
+		Enum.Technology.Future
+
+end)
+
+Lighting.GlobalShadows = true
+
+Lighting.Brightness =
+	S.Brightness
+
+Lighting.ExposureCompensation =
+	S.Exposure
+
+Lighting.Ambient =
+	Color3.fromRGB(
+		105,
+		110,
+		118
+	)
+
+Lighting.OutdoorAmbient =
+	Color3.fromRGB(
+		145,
+		150,
+		160
+	)
+
+pcall(function()
+
+	Lighting.EnvironmentDiffuseScale =
+		S.DiffuseScale
+
+	Lighting.EnvironmentSpecularScale =
+		S.SpecularScale
+
+end)
+
+task.wait(0.05)
+
+--========================================================--
+-- REMOVE OLD ULTRA3D EFFECTS
+--========================================================--
+
+SetProgress(
+	25,
+	"Cleaning old effects..."
+)
+
+for _, Object in ipairs(
+	Lighting:GetChildren()
+) do
+
+	if Object.Name:match("^Ultra3D_V") then
+		Object:Destroy()
+	end
+
+end
+
+task.wait(0.05)
+
+--========================================================--
+-- COLOR
+--========================================================--
+
+SetProgress(
+	40,
+	"Applying cinematic color..."
+)
+
+local Color =
+	Instance.new("ColorCorrectionEffect")
+
+Color.Name =
+	"Ultra3D_V8_Color"
+
+Color.Brightness =
+	S.ColorBrightness
+
+Color.Contrast =
+	S.Contrast
+
+Color.Saturation =
+	S.Saturation
+
+Color.TintColor =
+	Color3.fromRGB(
+		255,
+		250,
+		243
+	)
+
+Color.Parent = Lighting
+
+--========================================================--
+-- BLOOM
+--========================================================--
+
+SetProgress(
+	52,
+	"Optimizing bloom..."
+)
+
+local Bloom =
+	Instance.new("BloomEffect")
+
+Bloom.Name =
+	"Ultra3D_V8_Bloom"
+
+Bloom.Intensity =
+	S.BloomIntensity
+
+Bloom.Size =
+	S.BloomSize
+
+Bloom.Threshold =
+	S.BloomThreshold
+
+Bloom.Parent = Lighting
+
+--========================================================--
+-- SUN RAYS
+--========================================================--
+
+SetProgress(
+	63,
+	"Optimizing sunlight..."
+)
+
+local Sun =
+	Instance.new("SunRaysEffect")
+
+Sun.Name =
+	"Ultra3D_V8_Sun"
+
+Sun.Intensity =
+	S.SunIntensity
+
+Sun.Spread =
+	S.SunSpread
+
+Sun.Parent = Lighting
+
+--========================================================--
+-- ATMOSPHERE / FOG OFF
+--========================================================--
+
+SetProgress(
+	72,
+	"Disabling fog..."
+)
+
+for _, Object in ipairs(
+	Lighting:GetChildren()
+) do
+
+	if Object:IsA("Atmosphere") then
+
+		Object.Enabled = false
+
+	end
+
+end
+
+--========================================================--
+-- WATER
+--========================================================--
+
+SetProgress(
+	80,
+	"Optimizing water..."
+)
+
+local Terrain =
+	Workspace:FindFirstChildOfClass(
+		"Terrain"
+	)
+
+if Terrain then
+
+	pcall(function()
+
+		Terrain.WaterTransparency =
+			S.WaterTransparency
+
+		Terrain.WaterReflectance =
+			S.WaterReflectance
+
+		Terrain.WaterWaveSize =
+			S.WaterWaveSize
+
+		Terrain.WaterWaveSpeed =
+			S.WaterWaveSpeed
+
+		Terrain.WaterColor =
+			Color3.fromRGB(
+				28,
+				125,
+				158
+			)
+
+	end)
+
+end
+
+--========================================================--
+-- SKY
+--========================================================--
+
+SetProgress(
+	88,
+	"Optimizing sky..."
+)
+
+local Sky =
+	Lighting:FindFirstChildOfClass("Sky")
+
+if Sky then
+
+	pcall(function()
+
+		Sky.SunAngularSize = 18
+		Sky.MoonAngularSize = 10
+
+	end)
+
+end
+
+--========================================================--
+-- CAMERA
+--========================================================--
+
+SetProgress(
+	94,
+	"Finalizing camera..."
+)
+
+local Camera =
+	Workspace.CurrentCamera
+
+if Camera then
+
+	Camera.FieldOfView =
+		S.FieldOfView
+
+end
+
+--========================================================--
+-- DISABLE BLUR / DOF
+--========================================================--
+
+for _, Object in ipairs(
+	Lighting:GetChildren()
+) do
+
+	if Object:IsA("BlurEffect") then
+
+		pcall(function()
+			Object.Enabled = false
+		end)
+
+	elseif Object:IsA(
+		"DepthOfFieldEffect"
+	) then
+
+		pcall(function()
+			Object.Enabled = false
+		end)
+
+	end
+
+end
+
+--========================================================--
+-- 100%
+--========================================================--
+
+SetProgress(
+	100,
+	"Graphics ready!"
+)
+
+task.wait(0.35)
+
+--========================================================--
+-- FADE OUT
+--========================================================--
+
+local FadeInfo =
+	TweenInfo.new(
+		0.35,
+		Enum.EasingStyle.Quad,
+		Enum.EasingDirection.Out
+	)
+
+for _, Object in ipairs(
+	Main:GetDescendants()
+) do
+
+	if Object:IsA("TextLabel") then
+
+		TweenService:Create(
+			Object,
+			FadeInfo,
+			{
+				TextTransparency = 1
+			}
+		):Play()
+
+	elseif Object:IsA("Frame") then
+
+		TweenService:Create(
+			Object,
+			FadeInfo,
+			{
+				BackgroundTransparency = 1
+			}
+		):Play()
+
+	elseif Object:IsA("UIStroke") then
+
+		TweenService:Create(
+			Object,
+			FadeInfo,
+			{
+				Transparency = 1
+			}
+		):Play()
+
+	end
+
+end
+
+task.wait(0.4)
+
+LoadingGui:Destroy()
+
+--========================================================--
+-- DONE
+--========================================================--
+
+print("==============================================")
+print("       ULTRA 3D GRAPHICS V8")
+print("       CINEMATIC DAY - FPS OPTIMIZED")
+print("==============================================")
+print(" ATMOSPHERE / FOG      : OFF")
+print(" FUTURE LIGHTING       : ON")
+print(" GLOBAL SHADOWS        : ON")
+print(" DIFFUSE               : 82%")
+print(" SPECULAR              : 88%")
+print(" CONTRAST              : 24%")
+print(" SATURATION            : 16%")
+print(" BLOOM                 : 10%")
+print(" SUN RAYS              : 7%")
+print(" WATER REFLECTION      : 82%")
+print(" QUALITY FORCE         : OFF")
+print(" WORKSPACE SCAN        : OFF")
+print(" DESCENDANT MONITOR    : OFF")
+print(" DEPTH OF FIELD        : OFF")
+print(" BLUR                  : OFF")
+print("==============================================")
